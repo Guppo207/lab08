@@ -65,10 +65,18 @@ jobs:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v4
-    - run: choco install wixtoolset -y
-    - run: cmake -B build
-    - run: cmake --build build
-    - run: cd build && cpack -G WIX
+    
+    - name: Create dummy license if missing
+      run: if not exist LICENSE.rtf echo. > LICENSE.rtf
+    
+    - name: Install WiX
+      run: choco install wixtoolset -y
+    
+    - name: Build and package
+      run: |
+        cmake -B build
+        cmake --build build
+        cd build && cpack -G WIX
 
   macos-build:
     runs-on: macos-latest
