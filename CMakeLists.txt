@@ -13,7 +13,6 @@ project(TestRunning
     LANGUAGES CXX
 )
 
-# Initialize git submodule if not present
 if(BUILD_TESTS)
     find_package(Git REQUIRED)
     if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/googletest/CMakeLists.txt")
@@ -28,12 +27,10 @@ if(BUILD_TESTS)
         endif()
     endif()
     
-    # Configure GoogleTest
     set(BUILD_GMOCK ON CACHE BOOL "" FORCE)
     set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
     add_subdirectory(googletest)
     
-    # Create alias targets
     if(NOT TARGET GTest::GTest)
         add_library(GTest::GTest ALIAS gtest)
     endif()
@@ -49,7 +46,6 @@ endif()
 
 add_subdirectory(banking)
 
-# CPack configuration
 set(CPACK_PACKAGE_NAME "TestRunning")
 set(CPACK_PACKAGE_VENDOR "Guppo207")
 set(CPACK_PACKAGE_CONTACT "kirill.sherstyuk06@mail.ru")
