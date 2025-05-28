@@ -67,7 +67,11 @@ jobs:
     - uses: actions/checkout@v4
     
     - name: Create dummy license if missing
-      run: if not exist LICENSE.rtf echo. > LICENSE.rtf
+      shell: pwsh  # Явно указываем использовать PowerShell
+      run: |
+        if (!(Test-Path "LICENSE.rtf")) {
+            " " | Out-File -Encoding ASCII "LICENSE.rtf"
+        }
     
     - name: Install WiX
       run: choco install wixtoolset -y
