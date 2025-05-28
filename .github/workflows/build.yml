@@ -66,21 +66,27 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Create dummy license if missing
-      shell: pwsh  # Явно указываем использовать PowerShell
+    - name: Setup WiX
+      run: |
+        choco install wixtoolset -y
+        echo "WIX=C:\Program Files (x86)\WiX Toolset v3.11\bin" >> $GITHUB_ENV
+        
+    - name: Prepare license
+      shell: pwsh
       run: |
         if (!(Test-Path "LICENSE.rtf")) {
             " " | Out-File -Encoding ASCII "LICENSE.rtf"
         }
     
-    - name: Install WiX
-      run: choco install wixtoolset -y
-    
-    - name: Build and package
+    - name: Configure and build
       run: |
-        cmake -B build
-        cmake --build build
-        cd build && cpack -G WIX
+        cmake -B build -DCMAKE_BUILD_TYPE=Release
+        cmake --build build --config Release
+        
+    - name: Generate MSI
+      run: |
+        cd build
+        cpack -G WIX -C Release -V --debug
 
   macos-build:
     runs-on: macos-latest
