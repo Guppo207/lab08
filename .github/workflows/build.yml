@@ -1,6 +1,6 @@
-name: Build and Package
+name: Build and Test
 
-on: 
+on:
   push:
     branches: [ master ]
   pull_request:
@@ -9,7 +9,6 @@ on:
 jobs:
   linux-build:
     runs-on: ubuntu-latest
-    
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -23,10 +22,11 @@ jobs:
           build-essential \
           cmake \
           dpkg-dev \
-          rpm
+          rpm \
+          lcov
         
     - name: Configure project
-      run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+      run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=ON
       
     - name: Build project
       run: cmake --build build --config Release --parallel $(nproc)
@@ -36,14 +36,21 @@ jobs:
         cd build
         ctest --output-on-failure
         
-    - name: Create Linux packages
+    - name: Generate coverage report
+      if: success() && matrix.coverage == 'ON'
+      run: |
+        lcov --capture --directory . --output-file coverage.info
+        lcov --remove coverage.info '/usr/*' --output-file coverage.info
+        genhtml coverage.info --output-directory coverage_report
+        
+    - name: Create packages
       run: |
         cd build
         cpack -G TGZ
         cpack -G DEB
         cpack -G RPM
         
-    - name: Upload Linux artifacts
+    - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
         name: linux-packages
@@ -51,41 +58,47 @@ jobs:
           build/*.tar.gz
           build/*.deb
           build/*.rpm
+          build/coverage_report/**
         retention-days: 5
 
   windows-build:
     runs-on: windows-latest
-    
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
         submodules: recursive
         
-    - name: Install WiX Toolset (для MSI)
+    - name: Install WiX Toolset
       run: choco install wixtoolset -y
       
     - name: Configure project
-      run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+      run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=ON
       
     - name: Build project
       run: cmake --build build --config Release --parallel 2
       
+    - name: Run tests
+      run: |
+        cd build
+        ctest --output-on-failure
+        
     - name: Create MSI package
       run: |
         cd build
         cpack -G WIX
         
-    - name: Upload Windows artifacts
+    - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
         name: windows-packages
-        path: build/*.msi
+        path: |
+          build/*.msi
+          build/Testing/**
         retention-days: 5
 
   macos-build:
     runs-on: macos-latest
-    
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -93,19 +106,26 @@ jobs:
         submodules: recursive
         
     - name: Configure project
-      run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+      run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=ON
       
     - name: Build project
       run: cmake --build build --config Release --parallel 2
       
+    - name: Run tests
+      run: |
+        cd build
+        ctest --output-on-failure
+        
     - name: Create DMG package
       run: |
         cd build
-        cpack -G DragNDrop 
-      
-    - name: Upload macOS artifacts
+        cpack -G DragNDrop
+        
+    - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
         name: macos-packages
-        path: build/*.dmg
+        path: |
+          build/*.dmg
+          build/Testing/**
         retention-days: 5
