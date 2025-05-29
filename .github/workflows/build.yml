@@ -136,27 +136,14 @@ jobs:
     - name: Build Docker image
       run: |
         docker build -t banking-app .
-        
+    
     - name: Run tests in container
       run: |
-        docker run --rm banking-app sh -c "cd /app/build && ctest --output-on-failure"
+        docker run --rm banking-app sh -c "cd /app/build && ./RunTest --gtest_output=xml:test_results.xml"
+        docker cp $(docker create --rm banking-app):/app/build/test_results.xml ./test_results.xml
         
-    - name: Extract coverage report
-      if: success()
-      run: |
-        docker create --name banking-container banking-app
-        docker cp banking-container:/app/build/coverage.info ./docker_coverage.info
-        docker cp banking-container:/app/build/coverage_report ./docker_coverage_report
-        docker rm banking-container
-
-        lcov --remove ./docker_coverage.info '/usr/*' --output-file ./docker_coverage.info
-        genhtml ./docker_coverage.info --output-directory ./docker_coverage_report
-        
-    - name: Upload coverage report
+    - name: Upload test results
       uses: actions/upload-artifact@v4
       with:
-        name: docker-coverage-report
-        path: |
-          ./docker_coverage.info
-          ./docker_coverage_report/**
-        retention-days: 5
+        name: test-results
+        path: test_results.xml
