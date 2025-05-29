@@ -128,14 +128,12 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: recursive
-    - name: Install Docker dependencies
+    - name: Install Docker
       run: |
-        sudo apt-get remove -y containerd || true
         sudo apt-get update
-        sudo apt-get install -y \
-            docker.io \
-            docker-compose-plugin
-        
+        sudo apt-get install -y docker.io docker-compose
+        sudo systemctl enable --now docker
+            
     - name: Build Docker image
       run: |
         docker build -t banking-app .
