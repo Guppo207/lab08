@@ -130,7 +130,7 @@ jobs:
         submodules: recursive
     - name: Install Docker
       run: |
-        sudo apt-get ger remove containerd.io
+        sudo apt-get remove containerd.io
         sudo apt-get install docker.io docker-compose -y
             
     - name: Build Docker image
